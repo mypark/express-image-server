@@ -27,3 +27,4 @@ Filename is the original filename in the upload bucket on s3.
 ##Todos
 1. add the upload service that creates a temporary s3 upload token to upload the photo and provide an upload example.
 2. Make this a public npm package.
+3. Make startup code simpler and remove auto-generated express/www code
