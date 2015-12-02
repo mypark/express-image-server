@@ -4,6 +4,9 @@ var request = require('request');
 var gm = require('gm')
     .subClass({imageMagick: true}); // Enable ImageMagick integration.
 var imageType = require('image-type');
+var uuid = require('node-uuid');
+var AWS = require('aws-sdk');
+var s3 = new AWS.S3();
 
 router.get('/resize', function (req, res, next) {
 
@@ -53,7 +56,7 @@ router.get('/resize', function (req, res, next) {
 });
 
 var resize_photo = function (size, options, original, next) {
-    
+
     // Infer the scaling factor to avoid stretching the image unnaturally.
     var scalingFactor;
 
@@ -97,5 +100,62 @@ var resize_photo = function (size, options, original, next) {
 
 
 };
+
+// can fetch from s3 instead of http get
+//function getFromS3(filename, callback) {
+//    // Download the image from S3
+//    s3.getObject({
+//        Bucket: srcBucket,
+//        Key: filename
+//    }, function (err, response) {
+//        callback(err, response.Body);
+//    });
+//}
+
+const containerName = process.env.uploadBucket || 'uploads';
+
+function getUploadUrl(callback) {
+    var fileName =  uuid.v4();
+    //assuming amazon s3
+    var params = {Bucket: containerName, Key: fileName };
+
+    s3.getSignedUrl('putObject', params, function(err, link){
+        callback(err, link, fileName);
+    });
+}
+
+// if we want to pupload to azure instead
+//var azure = require('azure-storage');
+//var blobService = azure.createBlobService();
+//
+//function getAzureLink(fileName, callback) {
+//    var startDate = new Date();
+//    var expiryDate = new Date(startDate);
+//    expiryDate.setMinutes(startDate.getMinutes() + 10);
+//
+//    var sharedAccessPolicy = {
+//        AccessPolicy: {
+//            Permissions: azure.BlobUtilities.SharedAccessPermissions.WRITE,
+//            Start: startDate,
+//            Expiry: expiryDate
+//        },
+//    };
+//
+//    var token = blobSvc.generateSharedAccessSignature(containerName, fileName, sharedAccessPolicy);
+//    var url = blobService.getUrl(containerName, fileName, token);
+//       callback(null, url);
+//}
+
+router.post('/upload', function (req, res, next) {
+    getUploadUrl(function (err, uploadLink, fileName) {
+        if (!err) {
+            res.send(201,{url: uploadLink, fileName: fileName});
+        }
+        else {
+            res.send(500, err);
+        }
+
+    });
+});
 
 module.exports = router;
