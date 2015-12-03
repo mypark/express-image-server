@@ -33,23 +33,27 @@ router.get('/resize', function (req, res, next) {
         if (!body)
             return res.status(404).send('no body response for image');
 
-        var imgType = imageType(body);
+        try {
+            var imgType = imageType(body);
 
-        if (!imgType || (imgType.mime != "image/jpeg" && imgType.mime != "image/png")) {
-            console.log('skipping non-image ' + imageUrl);
-            return res.status(400).send('not an image type');
-        }
-        var original = gm(body);
-        original.size(function (err, size) {
-            if (err) {
-                console.error(err);
-                return res.status(500).send(err);
+            if (!imgType || (imgType.mime != "image/jpeg" && imgType.mime != "image/png")) {
+                console.log('skipping non-image ' + imageUrl);
+                return res.status(400).send('not an image type');
             }
-            resize_photo(size, options, original, function (err, photo) {
-                res.setHeader('Content-Type', 'image/jpeg');
-                res.send(photo);
+            var original = gm(body);
+            original.size(function (err, size) {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send(err);
+                }
+                resize_photo(size, options, original, function (err, photo) {
+                    res.setHeader('Content-Type', 'image/jpeg');
+                    res.send(photo);
+                });
             });
-        });
+        } catch (e) {
+            res.status(500).send(e);
+        }
 
     });
 
@@ -149,10 +153,10 @@ function getUploadUrl(callback) {
 router.post('/upload', function (req, res, next) {
     getUploadUrl(function (err, uploadLink, fileName) {
         if (!err) {
-            res.send(201,{url: uploadLink, fileName: fileName});
+            res.status(201).send({url: uploadLink, fileName: fileName});
         }
         else {
-            res.send(500, err);
+            res.status(500).send(err);
         }
 
     });
