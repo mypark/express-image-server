@@ -36,7 +36,7 @@ router.get('/resize', function (req, res, next) {
         var imgType = imageType(body);
 
         if (!imgType || (imgType.mime != "image/jpeg" && imgType.mime != "image/png")) {
-            console.log('skipping non-image ' + srcKey);
+            console.log('skipping non-image ' + imageUrl);
             return res.status(400).send('not an image type');
         }
         var original = gm(body);
